@@ -16,7 +16,6 @@ function htmlDecodeWithLineBreaks($, html) {
     console.log(html);
     let myhtml = html
     .replace(/<\/li>/gm, '\n</li>').replace(/<\/div>/gm, '</div>\n').replace(/<\/h1>/gm, '<\n').replace(/<script>(.|\n|\r)*?<\/script>/gm, '').replace(/<(?:.)*?>/gm, ''); // remove all html tags
-    // console.log(myhtml);
     return he.decode(myhtml);
   }
 
@@ -41,21 +40,14 @@ async function performScraping(url) {
         return $(element).text().trim().toLowerCase() == "jump to recipe";
     });
     let href = $(anchor).attr('href');
-    // console.log(href);
 
-    // let text = $(href).text();
-    // console.log($(href).html());
     let text = htmlDecodeWithLineBreaks($, $(href).html());
-    // console.log(htmlDecodeWithLineBreaks($, $(href).html()));
-    // console.log(text);
 
     let starting_at_ingredients = text.replace(new RegExp('(.|\n)*(\t|\n|\s|\r)+Ingredients(\t|\n|\s|\r)+'), '');
     starting_at_ingredients.trimStart();
     ingredients = starting_at_ingredients.replace(new RegExp('(\t|\n|\s|\r)+Instructions(.|\n|\r)*'), '');
     let starting_at_instructions = text.replace(new RegExp('(.|\n)*(\t|\n|\s|\r)+Instructions(\t|\n|\s|\r)+'), '');
     instructions = "-" + starting_at_instructions.replace(/\n(?!(\n|\r|\t|\s)+)/g, '\n -').replace(/(\r?\n\t?\s?){3,}/g, ''); // add dashes and remove extra line breaks
-    // console.log(ingredients);
-    // console.log(instructions);
 
 }
 
