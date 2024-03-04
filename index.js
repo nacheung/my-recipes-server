@@ -42,11 +42,12 @@ async function performScraping(url) {
 
     let element = $(href);
 
-    while ($(element).next().length != 0) {
-        element = $(element).next();
-        if (($(href).next()[0].name == "div" || $(href).next()[0].name == "section") && $(href).html().includes("Ingredients") && $(href).html().includes("Instructions")) {
+    while ($(element).length != 0) {
+        if (($(element)[0].name == "div" || $(element)[0].name == "section") && $(element).html().includes("Ingredients") && $(element).html().includes("Instructions")) {
             break;
         }
+        element = $(element).next();
+
     }
 
 
