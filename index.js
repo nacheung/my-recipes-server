@@ -13,7 +13,7 @@ app.use(express.json());
 let title, ingredients, instructions;
 
 function htmlDecodeWithLineBreaks($, html) {
-    console.log(html);
+    // console.log(html);
     let myhtml = html
     .replace(/<\/li>/gm, '\n</li>').replace(/<\/div>/gm, '</div>\n').replace(/<\/h\d>/gm, '\n').replace(/<script>(.|\n|\r)*?<\/script>/gm, '').replace(/<(?:.)*?>/gm, ''); // remove all html tags
     return he.decode(myhtml);
@@ -40,14 +40,28 @@ async function performScraping(url) {
     });
     let href = $(anchor).attr('href');
 
-    let text = htmlDecodeWithLineBreaks($, $(href).html());
+
+    // console.log($(href).next().html());
+
+    let html = $(href).html().includes("ingredients") ? $(href).html() : $(href).next().text();
+
+    // console.log(html);
+
+    // console.log($(href).next()[0].html());
+
+
+    let text = htmlDecodeWithLineBreaks($, html);
+
+    // console.log(text);
+
 
     let textWithNoExtraLineBreaks = text.replace(/(\r?\n\t?\s?){3,}/g, '\n');
 
     let starting_at_ingredients = textWithNoExtraLineBreaks.replace(new RegExp('(.|\n)*(\t|\n|\s|\r)+Ingredients(\t|\n|\s|\r)*'), '');
     starting_at_ingredients.trimStart();
     ingredients = starting_at_ingredients.replace(new RegExp('(\t|\n|\s|\r)*Instructions(.|\n|\r)*'), '').replace(/Cook Mode(.|\n|\r)*Prevent your screen from going dark/g, '');
-    let starting_at_instructions = text.replace(new RegExp('(.|\n)*(\t|\n|\s|\r)*Instructions(\t|\n|\s|\r)*'), '');
+    console.log(text);
+    let starting_at_instructions = text.replace(new RegExp('(.|\n|\r)*?(\t|\n|\s|\r)*Instructions(\t|\n|\s|\r)*'), '');
     instructions = "-" + starting_at_instructions.replace(/\n(?!(\n|\r|\t|\s)+)/g, '\n -'); 
 
 }
