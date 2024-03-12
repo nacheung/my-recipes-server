@@ -3,14 +3,32 @@ import request from "axios";
 import express from "express";
 import cors from "cors";
 import he from 'he';
+import mysql from "mysql";
+import 'dotenv/config';
+
 
 
 const app = express();
 
-app.use(cors());
+
+
+app.use(
+    cors({
+    origin: ["http://localhost:3000"],
+    methods: ["GET", "POST"],
+    credentials: true,
+    })
+   );
 app.use(express.json());
 
-let title, ingredients, instructions;
+ const db = mysql.createConnection({
+    host: "localhost",
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: "myrecipes",
+  });
+
+let title, ingredients, instructions, image;
 
 function htmlDecodeWithLineBreaks($, html) {
     // console.log(html);
@@ -34,6 +52,22 @@ async function performScraping(url) {
     
     let title_element = $('.entry-title')[0];
     title = $(title_element).text();
+
+    let image_element = $('img').filter((index, element) => {
+        console.log($(element).toString())
+        // console.log($(element).toString());
+        // console.log(title);
+        // console.log($(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, '').trim().toLowerCase());
+        // console.log($(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, ''));
+        // console.log($(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, '').trim().toLowerCase() == title.trim().toLowerCase());
+        return $(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, '').trim().toLowerCase() == title.trim().toLowerCase();
+    })
+    // console.log(image_element);
+    image = $(image_element).attr('src');
+    console.log(image);
+    // if(image.slice(0,4) == "data") image = $(image_element).attr('data-lazy-src');
+    // console.log(image);
+    
 
     let anchor = $('a').filter((index, element) => {
         return $(element).text().trim().toLowerCase() == "jump to recipe";
@@ -67,9 +101,86 @@ async function performScraping(url) {
 
 
 app.get('/message', (req, res) => {
-    performScraping(req.query.url).then(() => res.send({ title: title, ingredients: ingredients, instructions: instructions}));
+    performScraping(req.query.url).then(() => res.send({ title: title, ingredients: ingredients, instructions: instructions, image: image}));
+});
+
+app.post('/register', (req, res)=> {
+    const username = req.body.username;
+    const password = req.body.password;
+    db.query(
+        "INSERT INTO users (username, password) VALUES (?,?)",
+        [username, password],
+        (err, result)=> {
+            console.log(err);
+      }
+    );
+ });
+
+app.post('/login', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    db.query(
+        "SELECT * FROM users WHERE username = ? AND password = ?",
+        [username, password],
+        (err, result)=> {
+            if (err) {
+                res.send({err: err});
+            }
+    
+            if (result.length > 0) {
+                res.send( result);
+            }
+            else(res.send({message: "Wrong username/password comination!"}));
+        }
+    );
+});
+
+app.post('/save', (req, res) => {
+    const username = req.body.username;
+    const url = req.body.url;
+    const title = req.body.title;
+    const ingredients = req.body.ingredients;
+    const instructions = req.body.instructions;
+    const image = req.body.image
+
+    db.query(
+        "INSERT INTO recipes (username, url, title, ingredients, instructions, image) VALUES (?,?,?,?,?,?)",
+        [username, url, title, ingredients, instructions, image],
+        (err, result) => {
+            if (!err) {
+                res.send({result});
+            } else {
+                console.log(err);
+            }
+        }
+    );
+});
+
+
+app.post('/getrecipes', (req, res) => {
+    const username = req.body.username;
+
+    db.query(
+        "SELECT url, title, image FROM recipes WHERE username = ?",
+        [username],
+        (err, result)=> {
+            if (err) {
+                res.send({err: err});
+            }
+    
+            if (result.length > 0) {
+                res.send( result);
+            }
+            else(res.send({message: "No recipes"}));
+        }
+    );
 });
 
 app.listen(8000, () => {
     console.log(`Server is running on port 8000.`);
   });
+  app.listen(3001, () => {
+    console.log("running server"
+    );
+ });
