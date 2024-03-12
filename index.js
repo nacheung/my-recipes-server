@@ -28,7 +28,8 @@ app.use(express.json());
     database: "myrecipes",
   });
 
-let title, ingredients, instructions, image;
+let title, ingredients, instructions;
+let images = [];
 
 function htmlDecodeWithLineBreaks($, html) {
     // console.log(html);
@@ -53,18 +54,18 @@ async function performScraping(url) {
     let title_element = $('.entry-title')[0];
     title = $(title_element).text();
 
-    let image_element = $('img').filter((index, element) => {
-        console.log($(element).toString())
-        // console.log($(element).toString());
-        // console.log(title);
-        // console.log($(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, '').trim().toLowerCase());
-        // console.log($(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, ''));
-        // console.log($(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, '').trim().toLowerCase() == title.trim().toLowerCase());
-        return $(element).toString().replace(/.*?title=("|')/, '').replace(/("|').*/gm, '').trim().toLowerCase() == title.trim().toLowerCase();
+    images = [];
+
+    $('img').each((index, element) => {
+        let image;
+        image = $(element).attr('src');
+        if(image.slice(0,4) == "data") image = $(element).attr('data-lazy-src');
+        images.push(image);
     })
+    console.log(images);
     // console.log(image_element);
-    image = $(image_element).attr('src');
-    console.log(image);
+    // image = $(image_element).attr('src');
+    // console.log(image);
     // if(image.slice(0,4) == "data") image = $(image_element).attr('data-lazy-src');
     // console.log(image);
     
@@ -101,7 +102,7 @@ async function performScraping(url) {
 
 
 app.get('/message', (req, res) => {
-    performScraping(req.query.url).then(() => res.send({ title: title, ingredients: ingredients, instructions: instructions, image: image}));
+    performScraping(req.query.url).then(() => res.send({ title: title, ingredients: ingredients, instructions: instructions, images: images}));
 });
 
 app.post('/register', (req, res)=> {
